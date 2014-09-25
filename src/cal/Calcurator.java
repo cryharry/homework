@@ -1,69 +1,28 @@
 package cal;
-import javax.accessibility.AccessibleContext;
 import javax.swing.*;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.TitledBorder;
-
+import javax.swing.border.*;
 import java.awt.*;
-import java.awt.Component.BaselineResizeBehavior;
-import java.awt.Dialog.ModalExclusionType;
-import java.awt.Window.Type;
-import java.awt.dnd.DropTarget;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.ContainerEvent;
-import java.awt.event.ContainerListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.HierarchyBoundsListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
-import java.awt.event.InputMethodEvent;
-import java.awt.event.InputMethodListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowFocusListener;
-import java.awt.event.WindowListener;
-import java.awt.event.WindowStateListener;
-import java.awt.im.InputContext;
-import java.awt.im.InputMethodRequests;
-import java.awt.image.BufferStrategy;
-import java.awt.image.ColorModel;
-import java.awt.image.ImageObserver;
-import java.awt.image.ImageProducer;
-import java.awt.image.VolatileImage;
-import java.awt.peer.ComponentPeer;
-import java.beans.PropertyChangeListener;
-import java.beans.Transient;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.util.EventListener;
-import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.awt.event.*;
 
 public class Calcurator extends JFrame implements ActionListener {
-	JPanel pNorth, pTextField, pClear, pCenter;
+	JPanel pNorth, pTextField, pLabel, pClear, pCenter;
 	JTextField jText;
-	JButton bsBt, clearBt, numBt[] = new JButton[10];
-	JButton addBt, MinusBt, multiBt, subBt, dotBt, equalBt;
-	int num[], result = 0; 
-	public Calcurator() {
+	JTextArea jTextArea;
+	JLabel jl;
+	JButton bsBt, clearBt, operBt[], numBt[] = new JButton[10];
+	JButton addBt, minusBt, multiBt, divBt, dotBt, equalBt;
+	String oper = "";
+	int result = 0, eCount, num = 0; 
+	String str = "";
+	Calcurator() {
 		super("계산기");
 		pNorth = new JPanel(new GridLayout(2,1));
 		// 텍스트 필드 판넬
-		pTextField = new JPanel();
+		pTextField = new JPanel(new GridLayout(2,1));
+		pTextField.add(pLabel = new JPanel());
 		pTextField.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.RAISED),"계산기값"));
 		pTextField.add(jText = new JTextField(20));
+		jText.setBorder(null);
 		jText.setHorizontalAlignment(jText.RIGHT);
 		pNorth.add(pTextField);
 		// 백스페이스,클리어 버튼 판넬
@@ -78,78 +37,115 @@ public class Calcurator extends JFrame implements ActionListener {
 		// 넘버버튼 판넬
 		pCenter = new JPanel(new GridLayout(4,2,10,10));
 		pCenter.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+		pCenter.add(addBt = new JButton("+"));
 		for(int i=numBt.length-1; i >= 0; i--) {
 			switch(i){
 			case 6:
-				pCenter.add(addBt = new JButton("+"));
-				addBt.addActionListener(this);
+				pCenter.add(minusBt = new JButton("-"));
 				break;
 			case 3:
-				pCenter.add(MinusBt = new JButton("-"));
-				MinusBt.addActionListener(this);
+				pCenter.add(divBt = new JButton("/"));
 				break;
 			case 0:
-				pCenter.add(subBt = new JButton("/"));
-				subBt.addActionListener(this);
+				pCenter.add(multiBt = new JButton("*"));
+				pCenter.add(equalBt = new JButton("="));
+				pCenter.add(dotBt = new JButton("."));
+				dotBt.addActionListener(this);
 				break;
 			default:break;
-			}
-			if(i ==0 )pCenter.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-			pCenter.add(numBt[i] = new JButton(""+i));
+			}			
+			pCenter.add(numBt[i] = new JButton(String.valueOf(i)));
+			// 숫자버튼 이벤트
 			numBt[i].addActionListener(this);
-		} 
-		pCenter.add(dotBt = new JButton("."));
-		dotBt.addActionListener(this);
-		pCenter.add(equalBt = new JButton("="));
-		equalBt.addActionListener(this);
-		pCenter.add(multiBt = new JButton("*"));
-		multiBt.addActionListener(this);
+		}
 		add(pNorth,"North");
 		add(pCenter,"Center");
-		
+		// 연산자버튼 이벤트
+		setOperListener(addBt, minusBt, divBt, multiBt);
+		equalListener(equalBt);
 		// 계산기Frame
-		setSize(400, 400);
+		setSize(300, 300);
 		setVisible(true);
+		setResizable(false);
 		// 계산기 닫기
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	}
+	private void equalListener(JButton equalBt2) {
+		equalBt2.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				cal(oper,Integer.parseInt(str));
+				jText.setText(""+result);
+				pLabel.removeAll();
+				setVisible(true);
+			}
+		});
+	}
+	public void setOperListener(JButton ...operBtArr) {
+		operBt = operBtArr;
+		for(JButton num: operBt) {
+			num.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					inputOper(e.getActionCommand());
+				}
+			});
+		}
+	}
+	public void inputOper(String btn) {
+		oper = btn;
+		if(str != ""){
+			pLabel.add(jl = new JLabel(oper));
+			jText.setText(str);
+			num = Integer.parseInt(str);
+		} else {
+			result = 0;
+			pLabel.add(jl = new JLabel("0"));
+			pLabel.add(jl = new JLabel(oper));
+		}
+		if(result == 0){
+			result = num;
+		} else{
+			cal(oper, num);
+		}
+		str = "";
+		setVisible(true);
 	}
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		String str = e.getActionCommand();
-		int calNum = 0;
-		try {
-			if(str.matches("[0-9]")) {
-				jText.setText(str);
-				num = new int[calNum+1];
-				num[calNum] = Integer.parseInt(str);
-				calNum++;
-			} else {
-				result = cal(str, num[calNum]);
-				jText.setText(String.valueOf(result));
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+			str += e.getActionCommand();
+			pLabel.add(jl = new JLabel(e.getActionCommand()));
+			setVisible(true);
 	}
-
-	private int cal(String str, int x) {
-		switch(str) {
+	private int cal(String oper, int y) {
+		switch(oper) {
 			case "+":
-				result += x;
+				result += y;
+				jText.setText(""+result);
 				break;
 			case "-":
-				result -= x;
-				break;
-			case "*":
-				result *= x;
+				result -= y;
+				jText.setText(""+result);
 				break;
 			case "/":
-				result /= x;
+				result /= y;
+				jText.setText(""+result);
 				break;
-			case "=":
+			case "*":
+				result *= y;
+				jText.setText(""+result);
 				break;
-			default: System.out.println("이게아닌데");break;
+			case "clear":
+				result = 0;
+				jTextArea.removeAll();
+				break;
+			case "backspace":
+				System.out.println(jTextArea.getLineCount());
+				//jTextArea.remove();
+				break;
+			default: System.out.println("이게아닌데");
+				break;
 		}
 		return result;
 	}
