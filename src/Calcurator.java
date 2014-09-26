@@ -7,7 +7,6 @@ import java.awt.event.*;
 public class Calcurator extends JFrame implements ActionListener {
 	JPanel pNorth, pTextField, pLabel, pClear, pCenter;
 	JTextField jText;
-	JTextArea jTextArea;
 	JLabel jl;
 	JButton bsBt, clearBt, operBt[], numBt[] = new JButton[10];
 	JButton addBt, minusBt, multiBt, divBt, dotBt, equalBt;
@@ -19,15 +18,18 @@ public class Calcurator extends JFrame implements ActionListener {
 		pNorth = new JPanel(new GridLayout(2,1));
 		// 텍스트 필드 판넬
 		pTextField = new JPanel(new GridLayout(2,1));
-		pTextField.add(pLabel = new JPanel());
+		// 계산기 값 판넬 보더셋팅
 		pTextField.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.RAISED),"계산기값"));
+		// 텍스트필드 위 입력을 더할 라벨판넬 추가
+		pTextField.add(pLabel = new JPanel());
+		// 텍스트 필드 판넬에 텍스트 필드 추가
 		pTextField.add(jText = new JTextField(20));
-		jText.setBorder(null);
-		jText.setHorizontalAlignment(jText.RIGHT);
+		jText.setBorder(null); // 텍스트 필드 보더X
+		jText.setHorizontalAlignment(jText.RIGHT); // 텍스트 필드값 오른쪽 정렬
 		pNorth.add(pTextField);
 		// 백스페이스,클리어 버튼 판넬
 		pClear = new JPanel();
-		pClear.add(clearBt = new JButton("clear"));
+		pClear.add(clearBt = new JButton("C"));
 		clearBt.addActionListener(this);
 		pClear.add(bsBt = new JButton("backspace"));
 		bsBt.addActionListener(this);
@@ -65,11 +67,14 @@ public class Calcurator extends JFrame implements ActionListener {
 		equalListener(equalBt);
 		// 계산기Frame
 		setSize(300, 300);
+		Dimension dim = new Dimension(Toolkit.getDefaultToolkit().getScreenSize());
+		setLocation((int)(dim.getWidth()/2)-getWidth(), (int)(dim.getHeight()/2)-getHeight());
 		setVisible(true);
 		setResizable(false);
 		// 계산기 닫기
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
+	// "=" 버튼 내부무명이벤트
 	private void equalListener(JButton equalBt2) {
 		equalBt2.addActionListener(new ActionListener() {
 			@Override
@@ -81,9 +86,9 @@ public class Calcurator extends JFrame implements ActionListener {
 			}
 		});
 	}
+	// +,-,/,* 버튼 내부무명이벤트
 	public void setOperListener(JButton ...operBtArr) {
-		operBt = operBtArr;
-		for(JButton num: operBt) {
+		for(JButton num: operBtArr) {
 			num.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
@@ -136,17 +141,10 @@ public class Calcurator extends JFrame implements ActionListener {
 				result *= y;
 				jText.setText(""+result);
 				break;
-			case "clear":
-				result = 0;
-				jTextArea.removeAll();
-				break;
-			case "backspace":
-				System.out.println(jTextArea.getLineCount());
-				//jTextArea.remove();
-				break;
 			default: System.out.println("이게아닌데");
 				break;
 		}
+		setVisible(true);
 		return result;
 	}
 
